@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TranslateKeyboard
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -29,4 +32,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: translate-keyboard-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: TranslateKeyboard/app/build/outputs/apk/debug/app-debug.apk
