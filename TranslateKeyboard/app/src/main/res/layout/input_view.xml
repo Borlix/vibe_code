@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#1E1E1E">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/languagePairLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:textColor="#9AA0A6"
+            android:textSize="11sp"
+            android:paddingEnd="8dp"
+            android:text="EN → ES" />
+
+        <TextView
+            android:id="@+id/translationPreview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:minHeight="24dp"
+            android:text="Type something to see the translation..." />
+
+        <TextView
+            android:id="@+id/statusIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#6FCF97"
+            android:textSize="11sp"
+            android:paddingStart="6dp"
+            android:text="" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#333333" />
+
+    <android.inputmethodservice.KeyboardView
+        android:id="@+id/keyboardView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#2A2A2A"
+        android:keyBackground="@drawable/key_background"
+        android:keyTextColor="#FFFFFF"
+        android:keyTextSize="18sp"
+        android:shadowColor="#000000"
+        android:shadowRadius="0.0" />
+
+</LinearLayout>
