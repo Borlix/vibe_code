@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BorlixBuddy — Your Personal Assistant</title>
+<style>
+  :root {
+    --bg: #070B14;
+    --surface: #10182A;
+    --surface-alt: #0B1220;
+    --primary: #22D3EE;
+    --primary-solid: #2563EB;
+    --primary-dark: #1D4ED8;
+    --text: #F1F5F9;
+    --muted: #8291A8;
+    --border: #1E293B;
+    --radius: 12px;
+    --shadow: 0 0 0 1px rgba(34, 211, 238, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+    background: radial-gradient(1000px 500px at 50% -10%, rgba(34, 211, 238, 0.07), transparent), var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .shell { width: 100%; max-width: 720px; }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-solid));
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 15px;
+  }
+  .brand-name { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+  .brand-accent { color: var(--primary); text-shadow: 0 0 14px rgba(34, 211, 238, 0.35); }
+
+  .segmented {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .seg-btn {
+    border: none; background: transparent; color: var(--muted);
+    padding: 6px 14px; border-radius: 999px; font-size: 0.85rem;
+    cursor: pointer; font-weight: 500;
+  }
+  .seg-btn.active { background: var(--primary-solid); color: #fff; box-shadow: 0 0 12px rgba(37, 99, 235, 0.5); }
+
+  /* Status strip */
+  .status-strip {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .status-item { flex: 1; text-align: center; }
+  .status-item + .status-item { border-left: 1px solid var(--border); }
+  .status-item strong { display: block; font-size: 1.15rem; color: var(--primary); }
+  .status-item span { font-size: 0.75rem; color: var(--muted); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab {
+    background: none; border: none; padding: 8px 2px 10px;
+    font-size: 0.92rem; color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; font-weight: 500;
+  }
+  .tab.active { color: var(--primary); border-color: var(--primary); }
+
+  .panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .panel.active { display: block; }
+
+  /* Chat */
+  #chatLog {
+    height: 340px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 12px; padding-right: 4px;
+  }
+  .msg { max-width: 78%; padding: 10px 14px; border-radius: 14px; font-size: 0.92rem; line-height: 1.4; }
+  .msg.user { align-self: flex-end; background: var(--primary-solid); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai { align-self: flex-start; background: var(--surface-alt); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+  .input-row { display: flex; align-items: center; gap: 8px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px; padding: 6px 8px 6px 16px; }
+  .input-row input[type=text] { flex: 1; border: none; background: none; outline: none; font-size: 0.92rem; color: var(--text); }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .icon-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .icon-btn.primary { background: var(--primary-solid); border-color: var(--primary-solid); color: #fff; }
+  .icon-btn.primary:hover { background: var(--primary-dark); }
+
+  /* Tasks */
+  .task-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px; padding: 6px 6px 6px 16px; }
+  .task-input-row input { flex: 1; border: none; background: none; outline: none; font-size: 0.92rem; color: var(--text); }
+
+  #taskList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  #taskList li {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 6px; border-bottom: 1px solid var(--border);
+  }
+  #taskList li:last-child { border-bottom: none; }
+  #taskList li input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+  #taskList li .title { flex: 1; font-size: 0.92rem; }
+  #taskList li.done .title { text-decoration: line-through; color: var(--muted); }
+  #taskList li .delTask { background: none; border: none; color: var(--muted); cursor: pointer; opacity: 0; transition: opacity 0.15s; display: flex; }
+  #taskList li:hover .delTask { opacity: 1; }
+  #taskList li .delTask:hover { color: #F87171; }
+
+  .action-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .btn {
+    border: none; border-radius: 999px; padding: 10px 16px;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--primary-solid); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-ghost { background: var(--surface-alt); color: var(--primary); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--primary); }
+
+  /* Wins */
+  .panel h3 { margin: 0 0 12px; font-size: 1rem; font-weight: 700; }
+  #winsWall { display: flex; flex-direction: column; gap: 8px; }
+  .win-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface-alt); border-left: 3px solid var(--primary);
+    padding: 10px 14px; border-radius: 8px; font-size: 0.88rem;
+  }
+  .win-item .date { color: var(--muted); font-size: 0.75rem; white-space: nowrap; margin-left: 12px; }
+  .empty-state { color: var(--muted); font-size: 0.88rem; padding: 20px 0; text-align: center; }
+
+  /* Footer */
+  footer {
+    margin-top: 18px; display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 8px; font-size: 0.78rem; color: var(--muted);
+  }
+  .link-btn { background: none; border: none; color: var(--muted); cursor: pointer; text-decoration: underline; font-size: 0.78rem; padding: 0; }
+  .link-btn:hover { color: var(--primary-dark); }
+
+  svg { width: 17px; height: 17px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">B</div>
+      <div class="brand-name">Borlix<span class="brand-accent">Buddy</span></div>
+    </div>
+    <div class="segmented" id="personaSegment">
+      <button class="seg-btn active" data-persona="savage">Savage</button>
+      <button class="seg-btn" data-persona="coach">Coach</button>
+      <button class="seg-btn" data-persona="zen">Zen</button>
+    </div>
+  </header>
+
+  <div class="status-strip">
+    <div class="status-item"><strong id="streakStat">0</strong><span>day streak</span></div>
+    <div class="status-item"><strong id="xpStat">0</strong><span>xp earned</span></div>
+    <div class="status-item"><strong id="expiryStat">--</strong><span>until data reset</span></div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="chat">Chat</button>
+    <button class="tab" data-tab="tasks">Tasks</button>
+    <button class="tab" data-tab="wins">Wins</button>
+  </nav>
+
+  <main class="panel active" id="chatPanel">
+    <div id="chatLog"></div>
+    <div class="input-row">
+      <input type="text" id="chatInput" placeholder="Message BorlixBuddy..." />
+      <button class="icon-btn" id="micBtn" title="Voice input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><line x1="12" y1="18" x2="12" y2="21"/></svg>
+      </button>
+      <button class="icon-btn active" id="muteBtn" title="Toggle voice reply">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>
+      </button>
+      <button class="icon-btn primary" id="sendBtn" title="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <main class="panel" id="tasksPanel">
+    <div class="task-input-row">
+      <input type="text" id="taskInput" placeholder="Add a task..." />
+      <button class="icon-btn primary" id="addTaskBtn" title="Add task">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <ul id="taskList"></ul>
+    <div class="action-row">
+      <button class="btn btn-primary" id="roastDayBtn">Roast my day</button>
+      <button class="btn btn-ghost" id="recapBtn">End-of-day recap</button>
+    </div>
+  </main>
+
+  <main class="panel" id="winsPanel">
+    <h3>Wins wall</h3>
+    <div id="winsWall"></div>
+    <div class="action-row">
+      <button class="btn btn-ghost" id="weeklyRecapBtn">Weekly recap</button>
+    </div>
+  </main>
+
+  <footer>
+    <span>Stored only in this browser. Clears automatically after <span id="expiryDaysLabel">5</span> days.</span>
+    <button id="wipeBtn" class="link-btn">Clear my data</button>
+  </footer>
+
+</div>
+
+<script>
+// ====== CONFIG ======
+const WORKER_URL = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // <-- replace after deploying worker.js
+const EXPIRY_DAYS = 5; // change to 3-7 as desired
+document.getElementById("expiryDaysLabel").textContent = EXPIRY_DAYS;
+
+// ====== STORAGE with auto-expiry ======
+const STORE_KEY = "bb_data";
+
+function loadStore() {
+  const raw = localStorage.getItem(STORE_KEY);
+  if (!raw) return freshStore();
+  try {
+    const data = JSON.parse(raw);
+    const ageMs = Date.now() - data.createdAt;
+    if (ageMs > EXPIRY_DAYS * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(STORE_KEY);
+      return freshStore();
+    }
+    return data;
+  } catch {
+    return freshStore();
+  }
+}
+function freshStore() {
+  return { createdAt: Date.now(), tasks: [], history: [], wins: [], streak: 0, xp: 0, lastActiveDay: null, persona: "savage" };
+}
+function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+
+let store = loadStore();
+
+// ====== UI: expiry countdown ======
+function updateExpiryLabel() {
+  const remainMs = EXPIRY_DAYS * 24 * 60 * 60 * 1000 - (Date.now() - store.createdAt);
+  if (remainMs <= 0) { document.getElementById("expiryStat").textContent = "now"; return; }
+  const d = Math.floor(remainMs / 86400000);
+  const h = Math.floor((remainMs % 86400000) / 3600000);
+  document.getElementById("expiryStat").textContent = `${d}d ${h}h`;
+}
+updateExpiryLabel();
+setInterval(updateExpiryLabel, 60000);
+
+document.getElementById("wipeBtn").onclick = () => {
+  if (confirm("Clear all local data now?")) {
+    localStorage.removeItem(STORE_KEY);
+    store = freshStore();
+    saveStore();
+    renderAll();
+  }
+};
+
+// ====== Persona selector ======
+document.querySelectorAll(".seg-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".seg-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    store.persona = btn.dataset.persona;
+    saveStore();
+  };
+});
+document.querySelector(`.seg-btn[data-persona="${store.persona}"]`)?.classList.add("active");
+
+// ====== Tabs ======
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab + "Panel").classList.add("active");
+  };
+});
+
+// ====== Chat ======
+const chatLog = document.getElementById("chatLog");
+let muted = false;
+
+function appendMsg(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "user" ? "user" : "ai");
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+  return div;
+}
+
+// render existing history on load
+if (store.history.length === 0) {
+  appendMsg("ai", "Hey. What are we getting done today?");
+}
+store.history.forEach(m => appendMsg(m.role === "assistant" ? "ai" : "user", m.content));
+
+async function sendMessage(text) {
+  if (!text.trim()) return;
+  appendMsg("user", text);
+  store.history.push({ role: "user", content: text });
+  saveStore();
+
+  const thinkingBubble = appendMsg("ai", "…");
+
+  try {
+    const res = await fetch(WORKER_URL + "/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, persona: store.persona, history: store.history.slice(-8) }),
+    });
+    const data = await res.json();
+    const reply = data.reply || "Hmm, I got nothing. Try again.";
+    thinkingBubble.textContent = reply;
+    store.history.push({ role: "assistant", content: reply });
+    saveStore();
+    if (!muted) speak(reply);
+  } catch (err) {
+    thinkingBubble.textContent = "Couldn't reach the assistant. Check your connection or worker URL.";
+  }
+}
+
+document.getElementById("sendBtn").onclick = () => {
+  const input = document.getElementById("chatInput");
+  sendMessage(input.value);
+  input.value = "";
+};
+document.getElementById("chatInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("sendBtn").click();
+});
+
+document.getElementById("muteBtn").onclick = (e) => {
+  muted = !muted;
+  e.currentTarget.classList.toggle("active", !muted);
+};
+
+// ====== Voice input (browser-native) ======
+let recognition;
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById("chatInput").value = transcript;
+    sendMessage(transcript);
+  };
+  recognition.onerror = () => { document.getElementById("micBtn").classList.remove("active"); };
+  recognition.onend = () => { document.getElementById("micBtn").classList.remove("active"); };
+} else {
+  document.getElementById("micBtn").title = "Voice input not supported in this browser";
+}
+
+document.getElementById("micBtn").onclick = () => {
+  if (!recognition) { alert("Voice input isn't supported in this browser. Try Chrome."); return; }
+  document.getElementById("micBtn").classList.add("active");
+  recognition.start();
+};
+
+// ====== Voice output (Groq TTS via worker) ======
+async function speak(text) {
+  try {
+    const res = await fetch(WORKER_URL + "/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const audio = new Audio(URL.createObjectURL(blob));
+    audio.play();
+  } catch { /* fail silently, chat still works via text */ }
+}
+
+// ====== Tasks ======
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+  if (store.tasks.length === 0) {
+    list.innerHTML = '<div class="empty-state">No tasks yet. Add one above.</div>';
+    return;
+  }
+  store.tasks.forEach((t, i) => {
+    const li = document.createElement("li");
+    if (t.done) li.classList.add("done");
+    li.innerHTML = `
+      <input type="checkbox" ${t.done ? "checked" : ""} data-i="${i}" class="taskCheck" />
+      <span class="title">${escapeHtml(t.title)}</span>
+      <button data-i="${i}" class="delTask" title="Delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+    list.appendChild(li);
+  });
+  document.querySelectorAll(".taskCheck").forEach(cb => cb.onchange = onToggleTask);
+  document.querySelectorAll(".delTask").forEach(b => b.onclick = onDeleteTask);
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+document.getElementById("addTaskBtn").onclick = () => {
+  const input = document.getElementById("taskInput");
+  if (!input.value.trim()) return;
+  store.tasks.push({ title: input.value.trim(), done: false, createdAt: Date.now() });
+  input.value = "";
+  saveStore();
+  renderTasks();
+};
+document.getElementById("taskInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("addTaskBtn").click();
+});
+
+function onToggleTask(e) {
+  const i = e.target.dataset.i;
+  const task = store.tasks[i];
+  task.done = e.target.checked;
+  if (task.done) {
+    store.xp += 10;
+    store.wins.push({ title: task.title, date: new Date().toLocaleDateString() });
+    bumpStreak();
+  }
+  saveStore();
+  renderTasks();
+  renderStats();
+  renderWins();
+}
+function onDeleteTask(e) {
+  const btn = e.currentTarget || e.target.closest("button");
+  const i = btn.dataset.i;
+  store.tasks.splice(i, 1);
+  saveStore();
+  renderTasks();
+}
+
+function bumpStreak() {
+  const today = new Date().toDateString();
+  if (store.lastActiveDay === today) return; // already counted today
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  store.streak = store.lastActiveDay === yesterday ? store.streak + 1 : 1;
+  store.lastActiveDay = today;
+}
+
+function renderStats() {
+  document.getElementById("streakStat").textContent = store.streak;
+  document.getElementById("xpStat").textContent = store.xp;
+}
+
+function renderWins() {
+  const wall = document.getElementById("winsWall");
+  wall.innerHTML = "";
+  if (store.wins.length === 0) {
+    wall.innerHTML = '<div class="empty-state">Complete a task to start your wins wall.</div>';
+    return;
+  }
+  [...store.wins].reverse().forEach(w => {
+    const div = document.createElement("div");
+    div.className = "win-item";
+    div.innerHTML = `<span>${escapeHtml(w.title)}</span><span class="date">${w.date}</span>`;
+    wall.appendChild(div);
+  });
+}
+
+// ====== Roast / Recap actions ======
+document.getElementById("roastDayBtn").onclick = () => {
+  const done = store.tasks.filter(t => t.done).map(t => t.title);
+  const pending = store.tasks.filter(t => !t.done).map(t => t.title);
+  const prompt = `Roast my day so far. Done: [${done.join(", ") || "nothing"}]. Still pending: [${pending.join(", ") || "nothing"}].`;
+  document.querySelector('.tab[data-tab="chat"]').click();
+  sendMessage(prompt);
+};
+
+document.getElementById("recapBtn").onclick = () => {
+  const done = store.tasks.filter(t => t.done).map(t => t.title);
+  const pending = store.tasks.filter(t => !t.done).map(t => t.title);
+  const prompt = `Give me an end-of-day recap. I completed: [${done.join(", ") || "nothing"}]. I skipped: [${pending.join(", ") || "nothing"}]. Be real about it.`;
+  document.querySelector('.tab[data-tab="chat"]').click();
+  sendMessage(prompt);
+};
+
+document.getElementById("weeklyRecapBtn").onclick = () => {
+  const wins = store.wins.map(w => w.title).join(", ") || "nothing recorded";
+  const prompt = `Give me a weekly recap based on these completed tasks this period: [${wins}]. Current streak: ${store.streak} days.`;
+  document.querySelector('.tab[data-tab="chat"]').click();
+  sendMessage(prompt);
+};
+
+// ====== Init ======
+function renderAll() {
+  renderTasks();
+  renderStats();
+  renderWins();
+  updateExpiryLabel();
+}
+renderAll();
+</script>
+</body>
+</html>
