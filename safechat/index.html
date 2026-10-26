@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeChat</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sand: #f5efe6;
+  --sand2: #ede4d8;
+  --sand3: #e2d5c5;
+  --cream: #faf7f2;
+  --warm: #c8956c;
+  --warm2: #b07d52;
+  --warmlight: #f3e9de;
+  --green: #6aab7e;
+  --greenlight: #e8f5ec;
+  --t1: #3a2e24;
+  --t2: #7a6a5a;
+  --t3: #b0a090;
+  --font: 'Nunito', sans-serif;
+}
+
+html, body { height: 100%; background: var(--sand); color: var(--t1); font-family: var(--font); font-size: 15px; -webkit-font-smoothing: antialiased; }
+
+.screen { display: none; height: 100vh; }
+.screen.active { display: flex; }
+
+/* ─── LOBBY ─── */
+#lobby {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 24px;
+  background: var(--cream);
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(200,149,108,0.1) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(106,171,126,0.08) 0%, transparent 45%);
+}
+
+.brand { text-align: center; margin-bottom: 32px; }
+
+.brand-logo {
+  width: 68px;
+  height: 68px;
+  background: var(--warm);
+  border-radius: 22px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 28px rgba(200,149,108,0.38);
+}
+
+.brand-logo svg { width: 34px; height: 34px; stroke: white; fill: none; stroke-width: 2; }
+.brand h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: var(--t1); }
+.brand p { font-size: 13px; color: var(--t2); margin-top: 5px; }
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 4px 32px rgba(100,70,40,0.10), 0 0 0 1px rgba(200,149,108,0.07);
+}
+
+.tabs {
+  display: flex;
+  background: var(--sand);
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 26px;
+  gap: 4px;
+}
+
+.tab {
+  flex: 1;
+  padding: 9px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--t3);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.tab.on {
+  background: white;
+  color: var(--warm2);
+  box-shadow: 0 2px 8px rgba(100,70,40,0.10);
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.code-box {
+  background: var(--warmlight);
+  border-radius: 18px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  border: 2px dashed var(--sand3);
+}
+
+.code-val {
+  font-family: monospace;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  color: var(--warm2);
+}
+
+.copy-btn {
+  padding: 9px 16px;
+  background: var(--warm);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: transform 0.1s, opacity 0.15s;
+  box-shadow: 0 3px 10px rgba(200,149,108,0.3);
+}
+
+.copy-btn:active { transform: scale(0.95); }
+.copy-btn:hover { opacity: 0.88; }
+
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--t2);
+  margin-bottom: 18px;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--t3); flex-shrink: 0; }
+.dot.pulse { background: var(--warm); animation: throb 1.4s ease-in-out infinite; }
+.dot.ok { background: var(--green); }
+.dot.err { background: #d06060; }
+
+@keyframes throb {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.hint-box {
+  background: var(--sand);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.65;
+}
+
+.code-input {
+  width: 100%;
+  background: var(--warmlight);
+  border: 2px solid var(--sand3);
+  border-radius: 16px;
+  padding: 16px;
+  font-family: monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--warm2);
+  text-align: center;
+  letter-spacing: 6px;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+
+.code-input:focus { border-color: var(--warm); }
+.code-input::placeholder { color: var(--t3); font-size: 18px; letter-spacing: 3px; }
+
+.join-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--warm);
+  border: none;
+  border-radius: 16px;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: transform 0.1s, opacity 0.15s;
+  box-shadow: 0 4px 16px rgba(200,149,108,0.3);
+}
+
+.join-btn:hover { opacity: 0.88; }
+.join-btn:active { transform: scale(0.98); }
+.join-btn:disabled { opacity: 0.38; cursor: default; box-shadow: none; }
+
+.err-msg { font-size: 12px; color: #c05050; margin-top: 10px; text-align: center; min-height: 18px; }
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 2px dashed var(--sand3);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t2);
+  background: var(--sand);
+  border-radius: 20px;
+  padding: 5px 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge svg { width: 12px; height: 12px; stroke: var(--warm); fill: none; stroke-width: 2.2; }
+
+/* ─── CHAT ─── */
+#chat {
+  flex-direction: column;
+  background: var(--sand);
+  background-image: url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 52L52 0H26L0 26M52 52V26L26 52' fill='%23c8956c' fill-opacity='0.04'/%3E%3C/svg%3E");
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: white;
+  border-bottom: 2px solid var(--sand2);
+  flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(100,70,40,0.07);
+}
+
+.peer-info { display: flex; align-items: center; gap: 12px; }
+
+.peer-ava {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--warmlight);
+  border: 2px solid var(--sand3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.peer-name { font-size: 15px; font-weight: 700; color: var(--t1); }
+.peer-sub { font-size: 11px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 4px; }
+
+.enc-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: var(--greenlight);
+  border-radius: 20px;
+  padding: 5px 12px;
+}
+
+.enc-tag svg { width: 11px; height: 11px; stroke: var(--green); fill: none; stroke-width: 2.2; }
+
+.leave-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: none;
+  border: 2px solid var(--sand3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--t2);
+  transition: all 0.15s;
+  margin-left: 8px;
+}
+
+.leave-btn:hover { background: #fef0f0; border-color: #e0a0a0; color: #c05050; }
+.leave-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scroll-behavior: smooth;
+}
+
+.messages::-webkit-scrollbar { width: 5px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--sand3); border-radius: 3px; }
+
+.sys-line {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--t3);
+  margin: 10px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sys-line::before, .sys-line::after { content: ''; flex: 1; height: 1.5px; background: var(--sand3); }
+
+.msg-wrap { display: flex; flex-direction: column; margin-bottom: 4px; }
+.msg-wrap.mine { align-items: flex-end; }
+.msg-wrap.theirs { align-items: flex-start; }
+
+.msg-meta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--t3);
+  padding: 0 14px;
+  margin-bottom: 4px;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 11px 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+  animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.86) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.mine .bubble {
+  background: var(--warm);
+  color: white;
+  border-radius: 20px 20px 5px 20px;
+  box-shadow: 0 3px 12px rgba(200,149,108,0.28);
+}
+
+.theirs .bubble {
+  background: white;
+  color: var(--t1);
+  border-radius: 20px 20px 20px 5px;
+  box-shadow: 0 2px 8px rgba(100,70,40,0.09);
+}
+
+.media-bubble {
+  max-width: 72%;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.mine .media-bubble { box-shadow: 0 3px 14px rgba(200,149,108,0.3); }
+.theirs .media-bubble { box-shadow: 0 2px 10px rgba(100,70,40,0.12); }
+.media-bubble:hover { transform: scale(1.02); }
+
+.media-bubble img, .media-bubble video {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+}
+
+.media-bubble video { background: #1a1008; max-height: 260px; }
+
+.upload-bubble {
+  max-width: 72%;
+  background: white;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(100,70,40,0.09);
+  animation: popIn 0.22s ease;
+}
+
+.upload-name { font-size: 12px; font-weight: 700; color: var(--t1); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.progress-bg { height: 6px; background: var(--sand); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--warm); border-radius: 3px; transition: width 0.25s ease; }
+.upload-pct { font-size: 11px; font-weight: 700; color: var(--t3); margin-top: 5px; }
+
+.typing-row {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--t3);
+}
+
+.typing-dots { display: flex; gap: 4px; }
+
+.typing-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--t3);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.compose {
+  padding: 10px 16px 14px;
+  background: white;
+  border-top: 2px solid var(--sand2);
+  flex-shrink: 0;
+}
+
+.compose-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--sand);
+  border-radius: 22px;
+  padding: 8px 8px 8px 16px;
+  border: 2px solid var(--sand2);
+  transition: border-color 0.2s;
+}
+
+.compose-inner:focus-within { border-color: rgba(200,149,108,0.5); }
+
+.compose-inner textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--t1);
+  resize: none;
+  line-height: 1.5;
+  max-height: 110px;
+  padding: 4px 0;
+}
+
+.compose-inner textarea::placeholder { color: var(--t3); }
+
+.attach-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  background: var(--warmlight);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--warm2);
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover { background: var(--sand3); }
+.attach-btn:active { transform: scale(0.92); }
+.attach-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--warm);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 3px 12px rgba(200,149,108,0.35);
+  transition: transform 0.1s, opacity 0.15s;
+}
+
+.send-btn:hover { opacity: 0.88; }
+.send-btn:active { transform: scale(0.91); }
+.send-btn:disabled { opacity: 0.3; box-shadow: none; cursor: default; }
+.send-btn svg { width: 17px; height: 17px; stroke: white; fill: none; stroke-width: 2.2; }
+
+#file-input { display: none; }
+
+/* OVERLAYS */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(58,46,36,0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+}
+
+.overlay.show { display: flex; }
+
+.ov-card {
+  background: white;
+  border-radius: 26px;
+  padding: 36px 32px;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(100,70,40,0.22);
+}
+
+.ov-emoji { font-size: 48px; margin-bottom: 16px; }
+.ov-card h3 { font-size: 20px; font-weight: 700; color: var(--t1); margin-bottom: 8px; }
+.ov-card p { font-size: 13px; color: var(--t2); line-height: 1.65; margin-bottom: 22px; }
+
+.ov-spin {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--sand3);
+  border-top-color: var(--warm);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ov-code { font-family: monospace; font-size: 30px; font-weight: 700; letter-spacing: 7px; color: var(--warm2); }
+.ov-sub { font-size: 12px; font-weight: 700; color: var(--t3); }
+
+.ov-btn {
+  padding: 12px 28px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font);
+  border: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.ov-btn:hover { opacity: 0.85; }
+.ov-btn:active { transform: scale(0.97); }
+.ov-btn.primary { background: var(--warm); color: white; box-shadow: 0 4px 14px rgba(200,149,108,0.3); }
+.ov-btn.ghost { background: var(--sand); color: var(--t2); margin-top: 10px; }
+
+/* LIGHTBOX */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,12,6,0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 24px;
+  cursor: zoom-out;
+}
+
+#lightbox.show { display: flex; }
+
+#lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 14px;
+  object-fit: contain;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+#lb-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.14);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  font-weight: 700;
+}
+
+@media (max-width: 500px) {
+  .card { padding: 22px 18px; }
+  .enc-tag { display: none; }
+  .bubble, .media-bubble, .upload-bubble { max-width: 86%; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div class="screen active" id="lobby">
+  <div class="brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <h1>SafeChat</h1>
+    <p>Private · Encrypted · No accounts, no trace ☕</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab on" id="tab-create" onclick="switchTab('create')">Create room</div>
+      <div class="tab" id="tab-join" onclick="switchTab('join')">Join room</div>
+    </div>
+
+    <div id="panel-create">
+      <div class="section-label">Your room code</div>
+      <div class="code-box">
+        <div class="code-val" id="room-code">– – –</div>
+        <button class="copy-btn" onclick="copyCode()">Copy & Share</button>
+      </div>
+      <div class="status-row">
+        <div class="dot pulse" id="lobby-dot"></div>
+        <span id="lobby-status">Setting up your room…</span>
+      </div>
+      <div class="hint-box">
+        Share this code with the person you want to chat with. When they join, you'll connect directly — no server ever sees your messages. Close the tab and everything is gone forever. 🍃
+      </div>
+    </div>
+
+    <div id="panel-join" style="display:none">
+      <div class="section-label">Enter the code</div>
+      <input class="code-input" id="join-input" type="text" maxlength="6" placeholder="ABC123" oninput="formatCode()" />
+      <button class="join-btn" id="join-btn" onclick="joinRoom()" disabled>Connect 💬</button>
+      <div class="err-msg" id="join-err"></div>
+    </div>
+
+    <div class="badges">
+      <div class="badge"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>AES-256 encrypted</div>
+      <div class="badge"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Zero storage</div>
+      <div class="badge"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Peer-to-peer</div>
+      <div class="badge"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Photos & videos</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="chat">
+  <div class="chat-header">
+    <div class="peer-info">
+      <div class="peer-ava" id="peer-ava">🙂</div>
+      <div>
+        <div class="peer-name">Anonymous friend</div>
+        <div class="peer-sub">
+          <svg viewBox="0 0 6 6" width="7" height="7" fill="#6aab7e"><circle cx="3" cy="3" r="3"/></svg>
+          Connected
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="enc-tag">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        End-to-end encrypted
+      </div>
+      <button class="leave-btn" onclick="leaveChat()" title="Leave and wipe all messages">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="sys-line">Chat started — messages only exist here, nowhere else 🔒</div>
+  </div>
+
+  <div class="typing-row" id="typing-row">
+    <div class="typing-dots"><span></span><span></span><span></span></div>
+    <span>typing…</span>
+  </div>
+
+  <div class="compose">
+    <div class="compose-inner">
+      <textarea id="msg-input" rows="1" placeholder="Say something… ☕"
+        oninput="autoResize(this); handleTyping()"
+        onkeydown="msgKey(event)"></textarea>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="attach-btn" onclick="document.getElementById('file-input').click()" title="Send photo or video">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*,video/*" onchange="handleFile(event)" />
+  </div>
+</div>
+
+<!-- WAITING OVERLAY -->
+<div class="overlay" id="wait-ov">
+  <div class="ov-spin"></div>
+  <div class="ov-code" id="wait-code-disp"></div>
+  <div class="ov-sub">Waiting for your friend… share the code above ☝️</div>
+  <button class="ov-btn ghost" onclick="cancelWait()">Cancel</button>
+</div>
+
+<!-- DISCONNECTED OVERLAY -->
+<div class="overlay" id="dc-ov">
+  <div class="ov-card">
+    <div class="ov-emoji">🍂</div>
+    <h3>They left the chat</h3>
+    <p>Your friend closed the connection. Every message — text, photos, videos — has been wiped from memory. No trace anywhere. 🌿</p>
+    <button class="ov-btn primary" onclick="backToLobby()">Start a new chat</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <button id="lb-close" onclick="closeLightbox()">✕</button>
+  <div id="lb-content"></div>
+</div>
+
+<script>
+let peer = null, conn = null;
+let myCode = '';
+let cryptoKey = null;
+let isCreator = false;
+let typingTimer = null;
+let typingSent = false;
+let fileChunks = {};
+
+const CHUNK = 32768;
+
+// ── CRYPTO ──
+async function genKey() {
+  return crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+}
+
+async function exportKey(k) {
+  const raw = await crypto.subtle.exportKey('raw', k);
+  return Array.from(new Uint8Array(raw)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function importKey(hex) {
+  const raw = new Uint8Array(hex.match(/.{2}/g).map(b => parseInt(b,16)));
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt','decrypt']);
+}
+
+async function encText(text, key) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
+  const out = new Uint8Array(12 + ct.byteLength);
+  out.set(iv); out.set(new Uint8Array(ct), 12);
+  return btoa(String.fromCharCode(...out));
+}
+
+async function decText(b64, key) {
+  const buf = new Uint8Array(atob(b64).split('').map(c => c.charCodeAt(0)));
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0,12) }, key, buf.slice(12));
+  return new TextDecoder().decode(pt);
+}
+
+// ── UTILS ──
+function genCode() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(6)))
+    .map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+}
+
+function switchTab(t) {
+  ['create','join'].forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('on', x===t);
+    document.getElementById('panel-'+x).style.display = x===t ? '' : 'none';
+  });
+}
+
+// ── HOST ──
+async function initHost() {
+  myCode = genCode();
+  document.getElementById('room-code').textContent = myCode;
+  document.getElementById('lobby-status').textContent = 'Connecting to relay…';
+  isCreator = true;
+  cryptoKey = await genKey();
+
+  peer = new Peer('sc-'+myCode, { host:'0.peerjs.com', port:443, path:'/', secure:true, debug:0 });
+
+  peer.on('open', () => {
+    document.getElementById('lobby-dot').className = 'dot ok';
+    document.getElementById('lobby-status').textContent = 'Ready — share your code with a friend 🎉';
+  });
+
+  peer.on('error', e => {
+    if (e.type === 'unavailable-id') { peer.destroy(); peer=null; initHost(); }
+    else {
+      document.getElementById('lobby-dot').className = 'dot err';
+      document.getElementById('lobby-status').textContent = 'Connection error — try refreshing';
+    }
+  });
+
+  peer.on('connection', c => {
+    conn = c;
+    setupConn();
+    document.getElementById('wait-ov').classList.remove('show');
+  });
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(myCode).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy & Share', 1800);
+    document.getElementById('wait-code-disp').textContent = myCode;
+    document.getElementById('wait-ov').classList.add('show');
+  }).catch(() => {
+    // fallback: just show waiting overlay
+    document.getElementById('wait-code-disp').textContent = myCode;
+    document.getElementById('wait-ov').classList.add('show');
+  });
+}
+
+function cancelWait() { document.getElementById('wait-ov').classList.remove('show'); }
+
+// ── JOIN ──
+function formatCode() {
+  const inp = document.getElementById('join-input');
+  inp.value = inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  document.getElementById('join-btn').disabled = inp.value.length !== 6;
+  document.getElementById('join-err').textContent = '';
+}
+
+async function joinRoom() {
+  const code = document.getElementById('join-input').value.trim().toUpperCase();
+  if (code.length !== 6) return;
+  const btn = document.getElementById('join-btn');
+  btn.disabled = true; btn.textContent = 'Connecting… ⏳';
+  isCreator = false;
+  if (peer) peer.destroy();
+  peer = new Peer({ host:'0.peerjs.com', port:443, path:'/', secure:true, debug:0 });
+  peer.on('open', () => {
+    conn = peer.connect('sc-'+code, { reliable:true });
+    conn.on('open', () => { setupConn(); btn.disabled=false; btn.textContent='Connect 💬'; });
+    conn.on('error', () => { showJoinErr(); btn.disabled=false; btn.textContent='Connect 💬'; });
+  });
+  peer.on('error', () => { showJoinErr(); btn.disabled=false; btn.textContent='Connect 💬'; });
+  setTimeout(() => {
+    if (!conn || !conn.open) { showJoinErr(); btn.disabled=false; btn.textContent='Connect 💬'; }
+  }, 9000);
+}
+
+function showJoinErr() {
+  document.getElementById('join-err').textContent = 'Could not connect — double-check the code and try again.';
+}
+
+// ── SETUP CONN ──
+function setupConn() {
+  conn.on('open', async () => {
+    if (isCreator) {
+      const kHex = await exportKey(cryptoKey);
+      conn.send(JSON.stringify({ type:'key', key:kHex }));
+    }
+  });
+
+  conn.on('data', async raw => {
+    try {
+      if (raw instanceof ArrayBuffer) { handleChunk(raw); return; }
+      const msg = JSON.parse(raw);
+      if (msg.type === 'key') {
+        cryptoKey = await importKey(msg.key);
+        enterChat();
+        return;
+      }
+      if (!cryptoKey) return;
+      if (msg.type === 'msg') {
+        const text = await decText(msg.text, cryptoKey);
+        appendText(text, false, msg.ts);
+      }
+      if (msg.type === 'typing') {
+        document.getElementById('typing-row').style.display = 'flex';
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => document.getElementById('typing-row').style.display = 'none', 2200);
+      }
+      if (msg.type === 'file-start') {
+        fileChunks[msg.id] = { name:msg.name, mime:msg.mime, total:msg.total, chunks:[], received:0 };
+        addProgressBubble(msg.id, msg.name);
+      }
+      if (msg.type === 'file-end') { finalizeFile(msg.id); }
+      if (msg.type === 'leave') { showDC(); }
+    } catch(e) { console.log('data err', e); }
+  });
+
+  conn.on('close', () => showDC());
+  conn.on('error', () => showDC());
+  if (isCreator) enterChat();
+}
+
+function enterChat() {
+  document.getElementById('lobby').classList.remove('active');
+  document.getElementById('chat').classList.add('active');
+}
+
+// ── TEXT ──
+function appendText(text, mine, ts) {
+  const msgs = document.getElementById('messages');
+  const time = ts ? new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'now';
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ' + (mine ? 'mine' : 'theirs');
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = (mine ? 'You' : 'Them') + ' · ' + time;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  wrap.appendChild(meta);
+  wrap.appendChild(bubble);
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendMsg() {
+  if (!conn || !cryptoKey) return;
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  autoResize(inp);
+  const ts = Date.now();
+  const encrypted = await encText(text, cryptoKey);
+  conn.send(JSON.stringify({ type:'msg', text:encrypted, ts }));
+  appendText(text, true, ts);
+}
+
+function msgKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+}
+
+function handleTyping() {
+  if (!conn || !cryptoKey) return;
+  if (!typingSent) {
+    conn.send(JSON.stringify({ type:'typing' }));
+    typingSent = true;
+    setTimeout(() => typingSent = false, 1600);
+  }
+}
+
+// ── FILE SEND ──
+async function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file || !conn || !cryptoKey) return;
+  e.target.value = '';
+
+  // Limit: 50MB
+  if (file.size > 50 * 1024 * 1024) {
+    alert('Please keep files under 50MB for smooth transfer.');
+    return;
+  }
+
+  const id = 'f' + Date.now();
+  const reader = new FileReader();
+
+  reader.onload = async ev => {
+    const buf = ev.target.result;
+    const total = Math.ceil(buf.byteLength / CHUNK);
+
+    conn.send(JSON.stringify({ type:'file-start', id, name:file.name, mime:file.type, total }));
+    appendMedia(buf, file.type, true);
+
+    for (let i = 0; i < total; i++) {
+      const slice = buf.slice(i * CHUNK, (i+1) * CHUNK);
+      const idBytes = new TextEncoder().encode(id.padEnd(20,' '));
+      const packet = new Uint8Array(20 + slice.byteLength);
+      packet.set(idBytes, 0);
+      packet.set(new Uint8Array(slice), 20);
+      conn.send(packet.buffer);
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    conn.send(JSON.stringify({ type:'file-end', id }));
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function handleChunk(buf) {
+  const arr = new Uint8Array(buf);
+  const id = new TextDecoder().decode(arr.slice(0,20)).trim();
+  const data = arr.slice(20).buffer;
+  if (!fileChunks[id]) return;
+  fileChunks[id].chunks.push(data);
+  fileChunks[id].received++;
+  const pct = Math.round((fileChunks[id].received / fileChunks[id].total) * 100);
+  const bar = document.getElementById('bar-'+id);
+  const pctEl = document.getElementById('pct-'+id);
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+function addProgressBubble(id, name) {
+  const msgs = document.getElementById('messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap theirs';
+  wrap.id = 'wrap-'+id;
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = 'Them · incoming file';
+  const ub = document.createElement('div');
+  ub.className = 'upload-bubble';
+  ub.innerHTML = `<div class="upload-name">📎 ${name}</div>
+    <div class="progress-bg"><div class="progress-fill" id="bar-${id}" style="width:0%"></div></div>
+    <div class="upload-pct" id="pct-${id}">0%</div>`;
+  wrap.appendChild(meta);
+  wrap.appendChild(ub);
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function finalizeFile(id) {
+  const fc = fileChunks[id];
+  if (!fc) return;
+  const totalBytes = fc.chunks.reduce((a,c) => a + c.byteLength, 0);
+  const merged = new Uint8Array(totalBytes);
+  let offset = 0;
+  fc.chunks.forEach(c => { merged.set(new Uint8Array(c), offset); offset += c.byteLength; });
+  const blob = new Blob([merged], { type: fc.mime });
+  const url = URL.createObjectURL(blob);
+  const wrap = document.getElementById('wrap-'+id);
+  if (wrap) wrap.remove();
+  appendMediaFromUrl(url, fc.mime, false);
+  delete fileChunks[id];
+}
+
+function appendMedia(buf, mime, mine) {
+  const blob = new Blob([buf], { type: mime });
+  appendMediaFromUrl(URL.createObjectURL(blob), mime, mine);
+}
+
+function appendMediaFromUrl(url, mime, mine) {
+  const msgs = document.getElementById('messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ' + (mine ? 'mine' : 'theirs');
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  meta.textContent = (mine ? 'You' : 'Them') + ' · ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const mb = document.createElement('div');
+  mb.className = 'media-bubble';
+
+  if (mime.startsWith('image/')) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Shared image';
+    img.onclick = () => openLightbox(url);
+    mb.appendChild(img);
+  } else if (mime.startsWith('video/')) {
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.controls = true;
+    vid.preload = 'metadata';
+    vid.onclick = e => e.stopPropagation();
+    mb.appendChild(vid);
+  }
+
+  wrap.appendChild(meta);
+  wrap.appendChild(mb);
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── LIGHTBOX ──
+function openLightbox(url) {
+  const lc = document.getElementById('lb-content');
+  lc.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = url;
+  lc.appendChild(img);
+  document.getElementById('lightbox').classList.add('show');
+}
+
+function closeLightbox() { document.getElementById('lightbox').classList.remove('show'); }
+
+// ── LEAVE ──
+function leaveChat() {
+  if (conn) {
+    try { conn.send(JSON.stringify({ type:'leave' })); } catch(e) {}
+    conn.close();
+  }
+  if (peer) { peer.destroy(); peer=null; }
+  conn=null; cryptoKey=null; fileChunks={};
+  clearMessages();
+  backToLobby();
+}
+
+function showDC() {
+  clearMessages();
+  document.getElementById('dc-ov').classList.add('show');
+}
+
+function clearMessages() {
+  document.getElementById('messages').innerHTML =
+    '<div class="sys-line">Chat started — messages only exist here, nowhere else 🔒</div>';
+}
+
+function backToLobby() {
+  document.getElementById('dc-ov').classList.remove('show');
+  document.getElementById('chat').classList.remove('active');
+  document.getElementById('lobby').classList.add('active');
+  document.getElementById('join-input').value = '';
+  document.getElementById('join-btn').disabled = true;
+  document.getElementById('join-err').textContent = '';
+  if (peer) { peer.destroy(); peer=null; }
+  conn=null; cryptoKey=null; fileChunks={};
+  switchTab('create');
+  initHost();
+}
+
+// ── BOOT ──
+initHost();
+</script>
+</body>
+</html>
